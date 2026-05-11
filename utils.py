@@ -12,12 +12,3 @@ def get_headers():
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}"
     }
-
-def consultar_supabase(tabla, filtros=None):
-    url = f"{SUPABASE_URL}/rest/v1/{tabla}"
-    headers = get_headers()
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return []
