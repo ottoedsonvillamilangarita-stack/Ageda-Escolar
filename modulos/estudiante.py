@@ -1,58 +1,52 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
+from utils import get_headers, SUPABASE_URL
+from perfil import mostrar_perfil
 
 def mostrar(data):
-    st.title(f"🎓 Panel del Estudiante")
-    st.write(f"Bienvenido, {data['nombre']}")
-    st.success(f"📖 Grado: {data.get('grado', '11°A')}")
+    st.title("🎓 Panel del Estudiante")
     
-    # ========== NOTAS CON GRÁFICOS ==========
-    st.subheader("📖 Mis Calificaciones")
+    headers = get_headers()
     
-    # Datos de ejemplo (después vendrán de Supabase)
-    notas_ejemplo = [
-        {"materia": "Matemáticas", "nota": 4.5, "periodo": 1},
-        {"materia": "Ciencias", "nota": 3.8, "periodo": 1},
-        {"materia": "Español", "nota": 4.2, "periodo": 1},
-        {"materia": "Inglés", "nota": 4.0, "periodo": 1},
-        {"materia": "Sociales", "nota": 3.5, "periodo": 1},
-    ]
+    # Obtener datos actualizados del estudiante
+    url = f"{SUPABASE_URL}/rest/v1/personas?id_persona=eq.{data['id_persona']}"
+    response = requests.get(url, headers=headers)
+    estudiante = response.json()[0] if response.status_code == 200 else data
     
-    # Crear DataFrame con las notas
-    df_notas = pd.DataFrame(notas_ejemplo)
+    # Obtener username
+    url_user = f"{SUPABASE_URL}/rest/v1/usuarios_login?id_persona=eq.{data['id_persona']}"
+    response_user = requests.get(url_user, headers=headers)
+    username = response_user.json()[0]["username"] if response_user.json() else None
     
-    # Calcular promedio general
-    promedio_general = df_notas["nota"].mean()
+    usuario_completo = {
+        "id_persona": estudiante["id_persona"],
+        "nombre": estudiante["nombre"],
+        "email": estudiante.get("email"),
+        "telefono": estudiante.get("telefono"),
+        "username": username
+    }
     
-    # Mostrar notas en tabla
-    for _, row in df_notas.iterrows():
-        st.write(f"**{row['materia']}:** {row['nota']}")
+    tab_perfil, tab_notas = st.tabs(["👤 Mi Perfil", "📖 Mis Notas"])
     
-    st.divider()
-    st.write(f"**📊 Promedio General:** {promedio_general:.1f}")
+    with tab_perfil:
+        mostrar_perfil(usuario_completo)
     
-    # ========== GRÁFICO DE BARRAS ==========
-    fig = px.bar(
-        df_notas,
-        x="materia",
-        y="nota",
-        title="📊 Mis Calificaciones por Materia",
-        color="nota",
-        color_continuous_scale=["red", "yellow", "green"],
-        range_color=[0, 5],
-        text="nota"
-    )
-    fig.update_traces(textposition="outside")
-    fig.update_layout(height=400)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # ========== TAREAS PENDIENTES ==========
-    st.subheader("📋 Tareas Pendientes")
-    st.write("• Matemáticas: Taller de fracciones - Entrega: 15/05/2026")
-    st.write("• Ciencias: Cuestionario - Entrega: 18/05/2026")
-    
-    # ========== COMUNICACIONES ==========
-    st.subheader("💬 Comunicaciones")
-    st.write("💬 Papá: 'Recuerda estudiar para el examen de matemáticas'")
-    st.write("💬 Profe Ciencias: 'Revisar el laboratorio para la próxima clase'")
+    with tab_notas:
+        # Obtener grado
+        url_grado = f"{SUPABASE_URL}/rest/v1/estudiantes_grados?id_estudiante=eq.{data['id_persona']}"
+        response_grado = requests.get(url_grado, headers=headers)
+        if response_grado.status_code == 200 and response_grado.json():
+            grado_id = response_grado.json()[0]["id_grado"]
+            url_nom_grado = f"{SUPABASE_URL}/rest/v1/grados?id_grado=eq.{grado_id}"
+            response_nom_grado = requests.get(url_nom_grado, headers=headers)
+            if response_nom_grado.status_code == 200 and response_nom_grado.json():
+                st.success(f"📖 Grado: {response_nom_grado.json()[0]['nombre']}")
+        
+        # Notas de ejemplo (conectar con Supabase después)
+        st.subheader("Mis Calificaciones")
+        st.write("**Matemáticas:** 4.5")
+        st.write("**Ciencias:** 3.8")
+        st.write("**Español:** 4.2")
+        st.write("**Promedio:** 4.2")
