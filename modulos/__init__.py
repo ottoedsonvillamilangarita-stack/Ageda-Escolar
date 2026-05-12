@@ -7,4 +7,4 @@ from . import coordinador
 from . import secretaria
 from . import supervisor
 from . import admin
-from .comun import perfil
+from . import perfil
