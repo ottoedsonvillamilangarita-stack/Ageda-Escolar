@@ -101,6 +101,10 @@ def procesar_estudiantes(df):
     estudiantes_ok = 0
     acudientes_ok = 0
     
+    st.write(f"Procesando documento: {doc_est}")
+st.write(f"¿Ya existe? {resp.json()}")
+
+
     # 1. Insertar acudientes
     acudientes_unicos = df[["nombre_acudiente", "documento_acudiente", "telefono_acudiente", "email_acudiente"]].drop_duplicates(subset=["documento_acudiente"])
     
