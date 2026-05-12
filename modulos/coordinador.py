@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from utils import get_headers, SUPABASE_URL
+from comun.perfil import mostrar_perfil
 
 def mostrar(data):
     st.title("📋 Coordinación Académica")
@@ -10,25 +11,25 @@ def mostrar(data):
     # Obtener datos actualizados
     url = f"{SUPABASE_URL}/rest/v1/personas?id_persona=eq.{data['id_persona']}"
     response = requests.get(url, headers=headers)
-    coordinador = response.json()[0] if response.status_code == 200 else data
+    persona = response.json()[0] if response.status_code == 200 and response.json() else data
     
     # Obtener username
     url_user = f"{SUPABASE_URL}/rest/v1/usuarios_login?id_persona=eq.{data['id_persona']}"
     response_user = requests.get(url_user, headers=headers)
-    username = response_user.json()[0]["username"] if response_user.json() else None
+    username = response_user.json()[0]["username"] if response_user.status_code == 200 and response_user.json() else None
     
-    usuario_completo = {
-        "id_persona": coordinador["id_persona"],
-        "nombre": coordinador["nombre"],
-        "email": coordinador.get("email"),
-        "telefono": coordinador.get("telefono"),
+    usuario = {
+        "id_persona": persona.get("id_persona"),
+        "nombre": persona.get("nombre"),
+        "email": persona.get("email"),
+        "telefono": persona.get("telefono"),
         "username": username
     }
     
     tab_perfil, tab_stats = st.tabs(["👤 Mi Perfil", "📊 Estadísticas"])
     
     with tab_perfil:
-        mostrar_perfil(usuario_completo)
+        mostrar_perfil(usuario)
     
     with tab_stats:
         st.subheader("Estadísticas del Colegio")
@@ -43,15 +44,8 @@ def mostrar(data):
         response_doc = requests.get(url_doc, headers=headers)
         total_docentes = len(response_doc.json()) if response_doc.status_code == 200 else 0
         
-        # Total de cursos
-        url_cursos = f"{SUPABASE_URL}/rest/v1/grados"
-        response_cursos = requests.get(url_cursos, headers=headers)
-        total_cursos = len(response_cursos.json()) if response_cursos.status_code == 200 else 0
-        
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         with col1:
             st.metric("Total Estudiantes", total_estudiantes)
         with col2:
             st.metric("Total Docentes", total_docentes)
-        with col3:
-            st.metric("Total Cursos", total_cursos)
