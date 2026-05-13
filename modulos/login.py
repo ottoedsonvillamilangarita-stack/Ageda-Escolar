@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from utils import SUPABASE_URL, get_headers
+import json  # Añade esta línea
 
 def mostrar():
     st.title("📚 Plataforma Escolar")
@@ -20,16 +21,27 @@ def mostrar():
                 headers = get_headers()
                 response = requests.get(url, headers=headers)
                 
+                # --- CÓDIGO DE DEPURACIÓN ---
+                st.write("📡 URL:", url)
+                st.write("🔍 Status:", response.status_code)
+                st.write("📦 Datos recibidos:", response.json() if response.status_code == 200 else "Error")
+                # ----------------------------
+                
                 if response.status_code == 200:
                     datos = response.json()
-                    if datos and datos[0].get("password_hash") == password:
-                        user_data = datos[0]
-                        st.session_state.logged_in = True
-                        st.session_state.usuario = usuario
-                        st.session_state.user_data = user_data
-                        st.rerun()
+                    if datos:
+                        st.write("🔑 Password en BD:", datos[0].get("password_hash"))
+                        st.write("🔑 Password ingresada:", password)
+                        if datos[0].get("password_hash") == password:
+                            user_data = datos[0]
+                            st.session_state.logged_in = True
+                            st.session_state.usuario = usuario
+                            st.session_state.user_data = user_data
+                            st.rerun()
+                        else:
+                            st.error("❌ Usuario o contraseña incorrectos")
                     else:
-                        st.error("❌ Usuario o contraseña incorrectos")
+                        st.error("❌ Usuario no encontrado")
                 else:
                     st.error("❌ Error de conexión")
         
@@ -39,7 +51,7 @@ def mostrar():
                 st.rerun()
         
         st.divider()
-        st.caption("Usuarios: estudiante.laura, docente.herrera, secretaria")
+        st.caption("Usuarios: 4303389656, admin")
         st.caption("Contraseña: demo2026")
     
     else:
